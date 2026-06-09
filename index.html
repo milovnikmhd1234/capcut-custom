@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Web Video Editor s přihlášením</title>
+    <style>
+        :root {
+            --bg: #1a1a1a;
+            --panel: #2d2d2d;
+            --accent: #ff4757;
+            --text: #ffffff;
+            --success: #2ed573;
+        }
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* --- STYLY PRO PŘIHLÁŠENÍ / REGISTRACI --- */
+        #authContainer {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .auth-card {
+            background: var(--panel);
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            width: 320px;
+            text-align: center;
+        }
+        .auth-card h3 { margin-top: 0; color: var(--accent); }
+        .auth-tabs {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+        }
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            cursor: pointer;
+            background: none;
+            color: #aaa;
+            border: none;
+            font-weight: bold;
+        }
+        .auth-tab.active {
+            color: #fff;
+            border-bottom: 2px solid var(--accent);
+        }
+        .auth-msg {
+            font-size: 0.85rem;
+            margin-bottom: 10px;
+            min-height: 18px;
+        }
+
+        /* --- STYLY PRO EDITOR (Skrytý před přihlášením) --- */
+        #appContainer {
+            display: none; /* Zobrazí se až po úspěšném login */
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            background-color: var(--panel);
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #3e3e3e;
+        }
+        .container { display: flex; flex: 1; overflow: hidden; }
+        .workspace {
+            flex: 2; background: #000;
+            display: flex; justify-content: center; align-items: center;
+        }
+        canvas { max-width: 100%; max-height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+        .sidebar {
+            flex: 1; background: var(--panel); padding: 20px;
+            display: flex; flex-direction: column; gap: 20px;
+            border-left: 2px solid #3e3e3e; overflow-y: auto;
+        }
+        .timeline {
+            height: 100px; background: var(--panel);
+            border-top: 2px solid #3e3e3e; padding: 15px;
+            display: flex; align-items: center; gap: 15px;
+        }
+        button, .file-btn {
+            background: var(--accent); color: white; border: none;
+            padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;
+        }
+        button:hover { opacity: 0.9; }
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        input, select {
+            padding: 10px; background: #444; border: 1px solid #555;
+            color: white; border-radius: 4px; box-sizing: border-box; width: 100%;
+        }
+        #videoSource { display: none; }
+        .user-info { display: flex; align-items: center; gap: 15px; }
+    </style>
+</head>
+<body>
+
+    <div id="authContainer">
+        <div class="auth-card">
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">Přihlášení</button>
+                <button class="auth-tab" id="tabRegisterBtn" onclick="switchAuthTab('register')">Registrace</button>
+            </div>
+            
+            <h3 id="authTitle">Vítej zpět</h3>
+            <div id="authMessage" class="auth-msg"></div>
+
+            <div class="control-group" style="margin-bottom: 15px;">
+                <input type="text" id="authId" placeholder="Uživatelské ID">
+            </div>
+            <div class="control-group" style="margin-bottom: 20px;">
+                <input type="password" id="authPin" placeholder="Číselný PIN (např. 1234)" maxlength="6">
+            </div>
+
+            <button id="authActionBtn" style="width:100%;" onclick="handleAuthSubmit()">Vstoupit do studia</button>
+        </div>
+    </div>
+
+    <div id="appContainer">
+        <header>
+            <h2>Custom Video Studio 🎨</h2>
+            <div class="user-info">
+                <span id="welcomeUser" style="color: #aaa;">Uživatel: -</span>
+                <label class="file-btn">
+                    Nahrát video
+                    <input type="file" id="upload" accept="video/*" style="display:none;">
+                </label>
+                <button onclick="logout()" style="background: #444; font-size: 0.8rem;">Odhlásit</button>
+            </div>
+        </header>
+
+        <div class="container">
+            <video id="videoSource" loop muted></video>
+            <div class="workspace">
+                <canvas id="editorCanvas"></canvas>
+            </div>
+
+            <div class="sidebar">
+                <h3>Vlastní Efekty & Filtry</h3>
+                
+                <div class="control-group">
+                    <label>Styl / Filtr obrazu:</label>
+                    <select id="filterType">
+                        <option value="normal">Původní (Bez efektu)</option>
+                        <option value="matrix">Matrix (Zelený nádech)</option>
+                        <option value="vintage">Vintage (Teplý retro tón)</option>
+                        <option value="cyberpunk">Cyberpunk (Neonový tón)</option>
+                        <option value="cold">Severská zima (Studený modrý)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Vlastní text do videa:</label>
+                    <input type="text" id="customText" placeholder="Napiš text sem...">
+                </div>
+
+                <div class="control-group">
+                    <label>Barva textu:</label>
+                    <input type="color" id="textColor" value="#ffffff">
+                </div>
+
+                <hr style="border-color: #444; width: 100%;">
+
+                <button id="renderBtn" style="background: var(--success);">🎬 Vyexportovat video</button>
+                <div id="status" style="font-size: 0.9rem; color: #ffa502;"></div>
+            </div>
+        </div>
+
+        <div class="timeline">
+            <button id="playBtn">Play / Pause</button>
+            <span id="timeDisplay">00:00 / 00:00</span>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIKA AUTENTIZACE (LOCALSTORAGE) ---
+        let currentAuthMode = 'login';
+
+        function switchAuthTab(mode) {
+            currentAuthMode = mode;
+            document.getElementById('authMessage').innerText = '';
+            document.getElementById('authId').value = '';
+            document.getElementById('authPin').value = '';
+            
+            if (mode === 'login') {
+                document.getElementById('tabLoginBtn').classList.add('active');
+                document.getElementById('tabRegisterBtn').classList.remove('active');
+                document.getElementById('authTitle').innerText = 'Vítej zpět';
+                document.getElementById('authActionBtn').innerText = 'Vstoupit do studia';
+            } else {
+                document.getElementById('tabLoginBtn').classList.remove('active');
+                document.getElementById('tabRegisterBtn').classList.add('active');
+                document.getElementById('authTitle').innerText = 'Vytvořit nový účet';
+                document.getElementById('authActionBtn').innerText = 'Zaregistrovat se';
+            }
+        }
+
+        function handleAuthSubmit() {
+            const id = document.getElementById('authId').value.trim();
+            const pin = document.getElementById('authPin').value.trim();
+            const msgBox = document.getElementById('authMessage');
+
+            if (!id || !pin) {
+                msgBox.style.color = 'var(--accent)';
+                msgBox.innerText = 'Vyplň ID i PIN!';
+                return;
+            }
+
+            // Načtení databáze uživatelů z localStorage
+            let users = JSON.parse(localStorage.getItem('studio_users')) || {};
+
+            if (currentAuthMode === 'register') {
+                // REGISTRACE
+                if (users[id]) {
+                    msgBox.style.color = 'var(--accent)';
+                    msgBox.innerText = 'Toto ID je již zabrané. Vyber si jiné!';
+                } else {
+                    users[id] = pin; // Uložení PINu k ID
+                    localStorage.setItem('studio_users', JSON.stringify(users));
+                    msgBox.style.color = 'var(--success)';
+                    msgBox.innerText = 'Registrace úspěšná! Teď se přihlas.';
+                    setTimeout(() => switchAuthTab('login'), 1000);
+                }
+            } else {
+                // PŘIHLÁŠENÍ
+                if (users[id] && users[id] === pin) {
+                    // Úspěšný login
+                    document.getElementById('authContainer').style.display = 'none';
+                    document.getElementById('appContainer').style.display = 'flex';
+                    document.getElementById('welcomeUser').innerText = `Uživatel: ${id}`;
+                    initEditor(); // Spuštění funkcí editoru
+                } else {
+                    msgBox.style.color = 'var(--accent)';
+                    msgBox.innerText = 'Nesprávné ID nebo PIN!';
+                }
+            }
+        }
+
+        function logout() {
+            document.getElementById('appContainer').style.display = 'none';
+            document.getElementById('authContainer').style.display = 'flex';
+            switchAuthTab('login');
+            // Zastavíme video při odhlášení
+            const video = document.getElementById('videoSource');
+            video.pause();
+        }
+
+
+        // --- LOGIKA VIDEO EDITORU ---
+        function initEditor() {
+            const video = document.getElementById('videoSource');
+            const canvas = document.getElementById('editorCanvas');
+            const ctx = canvas.getContext('2d');
+
+            const upload = document.getElementById('upload');
+            const playBtn = document.getElementById('playBtn');
+            const filterType = document.getElementById('filterType');
+            const customText = document.getElementById('customText');
+            const textColor = document.getElementById('textColor');
+            const renderBtn = document.getElementById('renderBtn');
+            const status = document.getElementById('status');
+            const timeDisplay = document.getElementById('timeDisplay');
+
+            let animationFrameId;
+
+            // Reset eventů (aby se při opakovaném přihlášení neduplikovaly)
+            upload.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    video.src = URL.createObjectURL(file);
+                    video.onloadedmetadata = () => {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        updateTimeline();
+                        drawFrame();
+                    };
+                }
+            };
+
+            playBtn.onclick = () => {
+                if (video.paused) {
+                    video.play();
+                    renderLoop();
+                } else {
+                    video.pause();
+                    cancelAnimationFrame(animationFrameId);
+                }
+            };
+
+            function renderLoop() {
+                if (!video.paused && !video.ended) {
+                    drawFrame();
+                    updateTimeline();
+                    animationFrameId = requestAnimationFrame(renderLoop);
+                }
+            }
+
+            function drawFrame() {
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                if (filterType.value !== 'normal') {
+                    let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    let data = imageData.data;
+
+                    for (let i = 0; i < data.length; i += 4) {
+                        let r = data[i], g = data[i+1], b = data[i+2];
+
+                        if (filterType.value === 'matrix') {
+                            data[i] = r * 0.2; data[i+1] = g * 1.5; data[i+2] = b * 0.2;
+                        } else if (filterType.value === 'vintage') {
+                            data[i] = (r * 0.393) + (g * 0.769) + (b * 0.189);
+                            data[i+1] = (r * 0.349) + (g * 0.686) + (b * 0.168);
+                            data[i+2] = (r * 0.272) + (g * 0.534) + (b * 0.131);
+                        } else if (filterType.value === 'cyberpunk') {
+                            data[i] = r * 1.2; data[i+1] = g * 0.3; data[i+2] = b * 1.5;
+                        } else if (filterType.value === 'cold') {
+                            data[i] = r * 0.6; data[i+1] = g * 0.9; data[i+2] = b * 1.4;
+                        }
+                    }
+                    ctx.putImageData(imageData, 0, 0);
+                }
+
+                if (customText.value.trim() !== "") {
+                    ctx.fillStyle = textColor.value;
+                    ctx.font = `bold ${canvas.height * 0.06}px Arial`;
+                    ctx.textAlign = "center";
+                    ctx.fillText(customText.value, canvas.width / 2, canvas.height - (canvas.height * 0.1));
+                }
+            }
+
+            function updateTimeline() {
+                const current = Math.floor(video.currentTime);
+                const total = Math.floor(video.duration) || 0;
+                timeDisplay.innerText = `${current}s / ${total}s`;
+            }
+
+            // Real-time překreslení při změně filtrů/textu, když video stojí
+            filterType.onchange = drawFrame;
+            customText.oninput = drawFrame;
+            textColor.onchange = drawFrame;
+
+            renderBtn.onclick = () => {
+                if (!video.src) return alert("Nejprve nahraj video!");
+
+                status.innerText = "Exportuji... Nech video běžet.";
+                video.currentTime = 0;
+                video.play();
+                renderLoop();
+
+                const stream = canvas.captureStream(30);
+                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                const chunks = [];
+
+                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+                mediaRecorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: 'video/webm' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'custom-video.webm';
+                    a.click();
+                    status.innerText = "Export dokončen!";
+                };
+
+                mediaRecorder.start();
+                video.onended = () => { mediaRecorder.stop(); video.onended = null; };
+            };
+        }
+    </script>
+</body>
+</html>
