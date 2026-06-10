@@ -3,110 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Web Video Editor</title>
+    <title>CapCut HTML Clone</title>
     <style>
         :root {
-            --bg: #1a1a1a;
-            --panel: #2d2d2d;
-            --accent: #ff4757;
-            --text: #ffffff;
-            --success: #2ed573;
+            --bg-main: #18181c;
+            --bg-panel: #202024;
+            --bg-timeline: #111113;
+            --accent: #2f80ed;
+            --accent-hover: #1b66ca;
+            --text-main: #eeeeee;
+            --text-muted: #88888c;
+            --border: #2d2d34;
+            --success: #27ae60;
         }
+
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
+            user-select: none;
         }
 
-        /* --- STYLY PRO PŘIHLÁŠENÍ / REGISTRACI --- */
+        /* --- AUTH SCREEN --- */
         #authContainer {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg);
-            z-index: 1000;
+            background: var(--bg-main);
+            z-index: 9999;
             display: flex;
             justify-content: center;
             align-items: center;
         }
         .auth-card {
-            background: var(--panel);
+            background: var(--bg-panel);
             padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            width: 320px;
-            text-align: center;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            width: 340px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
-        .auth-card h3 { margin-top: 0; color: var(--accent); }
-        .auth-tabs {
-            display: flex;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #444;
-        }
+        .auth-tabs { display: flex; margin-bottom: 20px; background: #141416; padding: 4px; border-radius: 8px; }
         .auth-tab {
-            flex: 1;
-            padding: 10px;
-            cursor: pointer;
-            background: none;
-            color: #aaa;
-            border: none;
-            font-weight: bold;
+            flex: 1; padding: 8px; cursor: pointer; background: none;
+            color: var(--text-muted); border: none; font-weight: bold; border-radius: 6px;
         }
-        .auth-tab.active {
-            color: #fff;
-            border-bottom: 2px solid var(--accent);
+        .auth-tab.active { background: var(--bg-panel); color: white; }
+        .auth-input {
+            width: 100%; padding: 12px; background: #141416; border: 1px solid var(--border);
+            color: white; border-radius: 6px; margin-bottom: 12px; box-sizing: border-box;
         }
-        .auth-msg {
-            font-size: 0.85rem;
-            margin-bottom: 10px;
-            min-height: 18px;
+        .auth-btn {
+            width: 100%; padding: 12px; background: var(--accent); color: white;
+            border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px;
         }
+        .auth-btn:hover { background: var(--accent-hover); }
 
-        /* --- STYLY PRO EDITOR --- */
-        #appContainer {
-            display: none;
-            flex-direction: column;
-            height: 100vh;
-        }
+        /* --- MAIN INTERFACE (CAPCUT LAYOUT) --- */
+        #appContainer { display: none; flex-direction: column; height: 100vh; }
+
+        /* Top Bar */
         header {
-            background-color: var(--panel);
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #3e3e3e;
+            height: 48px; background: var(--bg-panel); display: flex;
+            justify-content: space-between; align-items: center; padding: 0 20px;
+            border-bottom: 1px solid var(--border);
         }
-        .container { display: flex; flex: 1; overflow: hidden; }
-        .workspace {
-            flex: 2; background: #000;
-            display: flex; justify-content: center; align-items: center;
-        }
-        canvas { max-width: 100%; max-height: 100%; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        .sidebar {
-            flex: 1; background: var(--panel); padding: 20px;
-            display: flex; flex-direction: column; gap: 20px;
-            border-left: 2px solid #3e3e3e; overflow-y: auto;
-        }
-        .timeline {
-            height: 100px; background: var(--panel);
-            border-top: 2px solid #3e3e3e; padding: 15px;
-            display: flex; align-items: center; gap: 15px;
-        }
-        button, .file-btn {
-            background: var(--accent); color: white; border: none;
-            padding: 10px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;
-        }
-        button:hover { opacity: 0.9; }
-        .control-group { display: flex; flex-direction: column; gap: 8px; }
-        input, select {
-            padding: 10px; background: #444; border: 1px solid #555;
-            color: white; border-radius: 4px; box-sizing: border-box; width: 100%;
-        }
+        .logo { font-weight: bold; font-size: 1.1rem; letter-spacing: 0.5px; }
+        .logo span { color: var(--accent); }
+
+        /* Workspace Grid */
+        .workspace { display: flex; flex: 1; height: calc(100vh - 48px - 250px); overflow: hidden; }
+
+        /* Left Panel - Assets & Controls */
+        .control-tabs { width: 320px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; }
+        .tab-nav { display: flex; border-bottom: 1px solid var(--border); background: #1e1e22; }
+        .nav-btn { flex: 1; padding: 12px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-weight: 500; }
+        .nav-btn.active { color: white; border-bottom: 2px solid var(--accent); }
+        .tab-content { padding: 20px; flex: 1; overflow-y: auto; display: none; }
+        .tab-content.active { display: block; }
+
+        /* Player Center */
+        .player-section { flex: 1; background: #0c0c0e; display: flex; justify-content: center; align-items: center; position: relative; padding: 20px; }
+        .canvas-container { position: relative; display: flex; justify-content: center; align-items: center; box-shadow: 0 8px 24px rgba(0,0,0,0.6); }
+        canvas { max-width: 100%; max-height: 100%; background: #000; cursor: move; }
+
+        /* Timeline Bottom */
+        .timeline-section { height: 250px; background: var(--bg-timeline); border-top: 1px solid var(--border); display: flex; flex-direction: column; }
+        .timeline-toolbar { height: 40px; border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; background: var(--bg-panel); }
+        .timeline-tracks { flex: 1; position: relative; overflow-x: auto; overflow-y: hidden; padding: 20px; }
+        
+        /* Utility styles */
+        .btn { background: var(--accent); color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem; }
+        .btn:hover { background: var(--accent-hover); }
+        .btn-secondary { background: #2d2d34; color: white; }
+        .btn-secondary:hover { background: #3d3d44; }
+        .checkbox-group { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; background: #141416; padding: 10px; border-radius: 6px; }
+        .checkbox-group input { width: 18px; height: 18px; cursor: pointer; }
+
         #videoSource { display: none; }
-        .user-info { display: flex; align-items: center; gap: 15px; }
     </style>
 </head>
 <body>
@@ -117,92 +115,107 @@
                 <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">Přihlášení</button>
                 <button class="auth-tab" id="tabRegisterBtn" onclick="switchAuthTab('register')">Registrace</button>
             </div>
-            
-            <h3 id="authTitle">Vítej zpět</h3>
-            <div id="authMessage" class="auth-msg"></div>
+            <h3 id="authTitle" style="margin-bottom:15px;">Vítej zpět</h3>
+            <div id="authMessage" style="font-size:0.85rem; margin-bottom:15px; min-height:18px; color: #ff4757;"></div>
 
-            <div class="control-group" style="margin-bottom: 15px;">
-                <input type="text" id="authUsername" placeholder="Uživatelské jméno">
-            </div>
-            
-            <div class="control-group" id="passwordGroup" style="margin-bottom: 15px;">
-                <input type="password" id="authPassword" placeholder="Heslo">
-            </div>
+            <input type="text" id="authUsername" class="auth-input" placeholder="Uživatelské jméno">
+            <input type="password" id="authPassword" class="auth-input" placeholder="Heslo">
 
-            <div class="control-group" id="questionGroup" style="margin-bottom: 20px; display: none;">
-                <label style="font-size: 0.8rem; text-align: left; color: #aaa;">Kontrolní otázka pro reset hesla:</label>
-                <select id="authQuestion">
-                    <option value="mazlicek">Jak se jmenoval tvůj první mazlíček?</option>
-                    <option value="mesto">V jakém městě ses narodil(a)?</option>
-                    <option value="skola">Jaká byla tvoje první škola?</option>
+            <div id="questionGroup" style="display:none; margin-bottom:15px; text-align:left;">
+                <label style="font-size:0.75rem; color:var(--text-muted);">Kontrolní otázka:</label>
+                <select id="authQuestion" class="auth-input" style="margin-top:5px; margin-bottom:8px;">
+                    <option value="mazlicek">Jméno prvního mazlíčka?</option>
+                    <option value="mesto">Město, kde ses narodil(a)?</option>
                 </select>
-                <input type="text" id="authAnswer" placeholder="Tvoje odpověď">
+                <input type="text" id="authAnswer" class="auth-input" placeholder="Odpověď">
             </div>
 
-            <button id="authActionBtn" style="width:100%; margin-bottom: 10px;" onclick="handleAuthSubmit()">Vstoupit do studia</button>
-            
-            <a href="#" id="forgotLink" style="color: var(--accent); font-size: 0.8rem; text-decoration: none;" onclick="switchAuthTab('forgot')">Zapomněl(a) jsi heslo?</a>
+            <button id="authActionBtn" class="auth-btn" onclick="handleAuthSubmit()">Vstoupit</button>
+            <a href="#" id="forgotLink" style="color:var(--text-muted); display:block; font-size:0.8rem; margin-top:15px; text-decoration:none;" onclick="switchAuthTab('forgot')">Zapomněl(a) jsi heslo?</a>
         </div>
     </div>
 
     <div id="appContainer">
         <header>
-            <h2>Custom Video Studio 🎨</h2>
-            <div class="user-info">
-                <span id="welcomeUser" style="color: #aaa;">Uživatel: -</span>
-                <label class="file-btn">
-                    Nahrát video
-                    <input type="file" id="upload" accept="video/*" style="display:none;">
-                </label>
-                <button onclick="logout()" style="background: #444; font-size: 0.8rem;">Odhlásit</button>
+            <div class="logo">CapCut <span>HTML Pro</span></div>
+            <div style="display:flex; align-items:center; gap:15px;">
+                <span id="welcomeUser" style="font-size:0.85rem; color:var(--text-muted);">Uživatel: -</span>
+                <button class="btn btn-secondary" onclick="saveProject()" style="background: var(--success);">Uložit projekt 💾</button>
+                <button class="btn btn-secondary" onclick="logout()">Odhlásit</button>
             </div>
         </header>
 
-        <div class="container">
-            <video id="videoSource" loop muted></video>
-            <div class="workspace">
-                <canvas id="editorCanvas"></canvas>
+        <div class="workspace">
+            <div class="control-tabs">
+                <div class="tab-nav">
+                    <button class="nav-btn active" onclick="openTab(event, 'tabMedia')">Média</button>
+                    <button class="nav-btn" onclick="openTab(event, 'tabText')">Text</button>
+                    <button class="nav-btn" onclick="openTab(event, 'tabEffects')">Efekty</button>
+                </div>
+
+                <div id="tabMedia" class="tab-content active">
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Importuj video soubor do projektu:</p>
+                    <label class="btn" style="display:inline-block; text-align:center; width:80%;">
+                        Vybrat video soubor
+                        <input type="file" id="upload" accept="video/*" style="display:none;">
+                    </label>
+                </div>
+
+                <div id="tabText" class="tab-content">
+                    <div class="checkbox-group" style="flex-direction:column; align-items:flex-start;">
+                        <label style="font-size:0.85rem; font-weight:bold;">Obsah textu:</label>
+                        <input type="text" id="customText" class="auth-input" placeholder="Napiš text..." style="margin-top:5px; margin-bottom:0;">
+                    </div>
+                    <div class="checkbox-group">
+                        <label style="font-size:0.85rem;">Barva textu:</label>
+                        <input type="color" id="textColor" value="#ffffff" style="background:none; border:none; width:40px; height:30px; padding:0;">
+                    </div>
+                    <p style="font-size:0.75rem; color:var(--text-muted);">💡 Text na videu vpravo můžeš chytit myší a libovolně posouvat!</p>
+                </div>
+
+                <div id="tabEffects" class="tab-content">
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0;">Můžeš kombinovat více efektů najednou:</p>
+                    <div class="checkbox-group"><input type="checkbox" id="fxMatrix"> <label>Matrix (Zelený nádech)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="fxVintage"> <label>Vintage (Retro film)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="fxCyberpunk"><label>Cyberpunk (Neon fialová)</label></div>
+                    <div class="checkbox-group"><input type="checkbox" id="fxCold"> <label>Severská zima (Modrá)</label></div>
+                </div>
             </div>
 
-            <div class="sidebar">
-                <h3>Vlastní Efekty & Filtry</h3>
-                
-                <div class="control-group">
-                    <label>Styl / Filtr obrazu:</label>
-                    <select id="filterType">
-                        <option value="normal">Původní (Bez efektu)</option>
-                        <option value="matrix">Matrix (Zelený nádech)</option>
-                        <option value="vintage">Vintage (Teplý retro tón)</option>
-                        <option value="cyberpunk">Cyberpunk (Neonový tón)</option>
-                        <option value="cold">Severská zima (Studený modrý)</option>
-                    </select>
+            <div class="player-section">
+                <video id="videoSource" loop muted></video>
+                <div class="canvas-container">
+                    <canvas id="editorCanvas"></canvas>
                 </div>
-
-                <div class="control-group">
-                    <label>Vlastní text do videa:</label>
-                    <input type="text" id="customText" placeholder="Napiš text sem...">
-                </div>
-
-                <div class="control-group">
-                    <label>Barva textu:</label>
-                    <input type="color" id="textColor" value="#ffffff">
-                </div>
-
-                <hr style="border-color: #444; width: 100%;">
-
-                <button id="renderBtn" style="background: var(--success);">🎬 Vyexportovat video</button>
-                <div id="status" style="font-size: 0.9rem; color: #ffa502;"></div>
             </div>
         </div>
 
-        <div class="timeline">
-            <button id="playBtn">Play / Pause</button>
-            <span id="timeDisplay">00:00 / 00:00</span>
+        <div class="timeline-section">
+            <div class="timeline-toolbar">
+                <button class="btn" id="playBtn">Přehrát / Pauza ▶</button>
+                <span id="timeDisplay" style="font-family:monospace; font-size:0.9rem; color:var(--text-muted);">00:00 / 00:00</span>
+                <button class="btn" id="renderBtn" style="margin-left:auto; background:#9b51e0;">Exportovat hotové video 🎬</button>
+            </div>
+            <div class="timeline-tracks">
+                <div id="status" style="color: var(--accent); font-weight:bold; font-size:0.9rem;">Připraven. Vlož video pro začátek práce.</div>
+            </div>
         </div>
     </div>
 
     <script>
-        // --- LOGIKA AUTENTIZACE ---
+        // --- DATA STATE ---
+        let currentUser = "";
+        let textX = 100;
+        let textY = 100;
+        let isDragging = false;
+        let animationFrameId;
+
+        // Elements
+        const video = document.getElementById('videoSource');
+        const canvas = document.getElementById('editorCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // --- LOGIN & REGISTRACE SYSTÉM (PRO VŠECHNY UŽIVATELE) ---
         let currentAuthMode = 'login';
 
         function switchAuthTab(mode) {
@@ -212,36 +225,31 @@
             document.getElementById('authPassword').value = '';
             document.getElementById('authAnswer').value = '';
             
-            const tabs = document.getElementById('authTabs');
-            const passwordGroup = document.getElementById('passwordGroup');
             const questionGroup = document.getElementById('questionGroup');
             const forgotLink = document.getElementById('forgotLink');
+            const tabs = document.getElementById('authTabs');
 
             tabs.style.display = 'flex';
-            passwordGroup.style.display = 'block';
             questionGroup.style.display = 'none';
             forgotLink.style.display = 'inline-block';
 
             if (mode === 'login') {
-                document.getElementById('tabLoginBtn').classList.add('active');
-                document.getElementById('tabRegisterBtn').classList.remove('active');
+                document.getElementById('tabLoginBtn').className = 'auth-tab active';
+                document.getElementById('tabRegisterBtn').className = 'auth-tab';
                 document.getElementById('authTitle').innerText = 'Vítej zpět';
-                document.getElementById('authActionBtn').innerText = 'Vstoupit do studia';
+                document.getElementById('authActionBtn').innerText = 'Vstoupit';
             } else if (mode === 'register') {
-                document.getElementById('tabLoginBtn').classList.remove('active');
-                document.getElementById('tabRegisterBtn').classList.add('active');
-                document.getElementById('authTitle').innerText = 'Vytvořit nový účet';
+                document.getElementById('tabLoginBtn').className = 'auth-tab';
+                document.getElementById('tabRegisterBtn').className = 'auth-tab active';
+                document.getElementById('authTitle').innerText = 'Vytvořit účet';
                 questionGroup.style.display = 'block';
                 document.getElementById('authActionBtn').innerText = 'Zaregistrovat se';
             } else if (mode === 'forgot') {
                 tabs.style.display = 'none';
-                passwordGroup.style.display = 'none';
                 questionGroup.style.display = 'block';
                 forgotLink.style.display = 'none';
-                document.getElementById('authTitle').innerText = 'Resetovat heslo';
-                document.getElementById('authActionBtn').innerText = 'Obnovit heslo';
-                document.getElementById('authMessage').style.color = '#fff';
-                document.getElementById('authMessage').innerText = 'Zadej své jméno a odpověz na otázku.';
+                document.getElementById('authTitle').innerText = 'Obnova hesla';
+                document.getElementById('authActionBtn').innerText = 'Zobrazit heslo';
             }
         }
 
@@ -252,97 +260,96 @@
             const answer = document.getElementById('authAnswer').value.trim().toLowerCase();
             const msgBox = document.getElementById('authMessage');
 
-            if (!username) {
-                msgBox.style.color = 'var(--accent)';
-                msgBox.innerText = 'Vyplň uživatelské jméno!';
-                return;
-            }
+            if (!username) return msgBox.innerText = 'Zadej uživatelské jméno!';
 
-            let users = JSON.parse(localStorage.getItem('studio_users')) || {};
+            let users = JSON.parse(localStorage.getItem('cc_users')) || {};
 
             if (currentAuthMode === 'register') {
-                if (!password || !answer) {
-                    msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Vyplň heslo i odpověď na otázku!';
-                    return;
-                }
-                if (users[username]) {
-                    msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Toto uživatelské jméno je již zabrané!';
-                } else {
-                    users[username] = { password: password, question: question, answer: answer };
-                    localStorage.setItem('studio_users', JSON.stringify(users));
-                    msgBox.style.color = 'var(--success)';
-                    msgBox.innerText = 'Registrace úspěšná! Nyní se přihlas.';
-                    setTimeout(() => switchAuthTab('login'), 1200);
-                }
+                if (!password || !answer) return msgBox.innerText = 'Vyplň všechna pole!';
+                if (users[username]) return msgBox.innerText = 'Uživatel již existuje!';
+                
+                users[username] = { password: password, question: question, answer: answer, project: null };
+                localStorage.setItem('cc_users', JSON.stringify(users));
+                msgBox.style.color = 'var(--success)';
+                msgBox.innerText = 'Registrace úspěšná! Přihlas se.';
+                setTimeout(() => switchAuthTab('login'), 1000);
 
             } else if (currentAuthMode === 'login') {
-                if (!password) {
-                    msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Zadej heslo!';
-                    return;
-                }
-                const user = users[username];
-                const savedPassword = user && typeof user === 'object' ? user.password : null;
-
-                if (user && savedPassword === password) {
+                if (users[username] && users[username].password === password) {
+                    currentUser = username;
                     document.getElementById('authContainer').style.display = 'none';
                     document.getElementById('appContainer').style.display = 'flex';
                     document.getElementById('welcomeUser').innerText = `Uživatel: ${username}`;
+                    
+                    // Načtení projektu uživatele, pokud existuje
+                    loadProject(users[username].project);
                     initEditor();
                 } else {
-                    msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Nesprávné jméno nebo heslo!';
+                    msgBox.style.color = '#ff4757';
+                    msgBox.innerText = 'Chybné jméno nebo heslo!';
                 }
-
             } else if (currentAuthMode === 'forgot') {
-                const user = users[username];
-                if (!user || typeof user !== 'object') {
-                    msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Uživatel s tímto jménem neexistuje.';
-                    return;
-                }
-
-                if (user.question === question && user.answer === answer) {
+                if (users[username] && users[username].question === question && users[username].answer === answer) {
                     msgBox.style.color = 'var(--success)';
-                    msgBox.innerText = `Správně! Tvoje heslo je: ${user.password}`;
-                    
+                    msgBox.innerText = `Tvoje heslo je: ${users[username].password}`;
                     document.getElementById('authActionBtn').innerText = 'Zpět na přihlášení';
-                    document.getElementById('authActionBtn').onclick = () => {
-                        document.getElementById('authActionBtn').onclick = handleAuthSubmit;
-                        switchAuthTab('login');
-                    };
+                    document.getElementById('authActionBtn').onclick = () => { location.reload(); };
                 } else {
-                    msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Chybná odpověď nebo vybraná otázka!';
+                    msgBox.style.color = '#ff4757';
+                    msgBox.innerText = 'Chybná odpověď!';
                 }
             }
         }
 
-        function logout() {
-            document.getElementById('appContainer').style.display = 'none';
-            document.getElementById('authContainer').style.display = 'flex';
-            switchAuthTab('login');
-            document.getElementById('videoSource').pause();
+        function logout() { location.reload(); }
+
+        // --- UKLÁDÁNÍ A NAČÍTÁNÍ PROJEKTU ---
+        function saveProject() {
+            let users = JSON.parse(localStorage.getItem('cc_users')) || {};
+            if (users[currentUser]) {
+                users[currentUser].project = {
+                    text: document.getElementById('customText').value,
+                    textColor: document.getElementById('textColor').value,
+                    textX: textX,
+                    textY: textY,
+                    fxMatrix: document.getElementById('fxMatrix').checked,
+                    fxVintage: document.getElementById('fxVintage').checked,
+                    fxCyberpunk: document.getElementById('fxCyberpunk').checked,
+                    fxCold: document.getElementById('fxCold').checked
+                };
+                localStorage.setItem('cc_users', JSON.stringify(users));
+                alert('Projekt úspěšně uložen do tvého profilu! 💾');
+            }
         }
 
-        // --- LOGIKA VIDEO EDITORU ---
-        function initEditor() {
-            const video = document.getElementById('videoSource');
-            const canvas = document.getElementById('editorCanvas');
-            const ctx = canvas.getContext('2d');
+        function loadProject(projectData) {
+            if (!projectData) return;
+            document.getElementById('customText').value = projectData.text || "";
+            document.getElementById('textColor').value = projectData.textColor || "#ffffff";
+            textX = projectData.textX || 100;
+            textY = projectData.textY || 100;
+            document.getElementById('fxMatrix').checked = projectData.fxMatrix || false;
+            document.getElementById('fxVintage').checked = projectData.fxVintage || false;
+            document.getElementById('fxCyberpunk').checked = projectData.fxCyberpunk || false;
+            document.getElementById('fxCold').checked = projectData.fxCold || false;
+        }
 
+        // --- TABS NAVIGATION ---
+        function openTab(evt, tabName) {
+            const contents = document.getElementsByClassName("tab-content");
+            for (let i = 0; i < contents.length; i++) contents[i].className = "tab-content";
+            const tabs = document.getElementsByClassName("nav-btn");
+            for (let i = 0; i < tabs.length; i++) tabs[i].className = "nav-btn";
+            document.getElementById(tabName).className = "tab-content active";
+            evt.currentTarget.className = "nav-btn active";
+        }
+
+        // --- EDITOR LOGIC ---
+        function initEditor() {
             const upload = document.getElementById('upload');
             const playBtn = document.getElementById('playBtn');
-            const filterType = document.getElementById('filterType');
-            const customText = document.getElementById('customText');
-            const textColor = document.getElementById('textColor');
-            const renderBtn = document.getElementById('renderBtn');
-            const status = document.getElementById('status');
             const timeDisplay = document.getElementById('timeDisplay');
-
-            let animationFrameId;
+            const status = document.getElementById('status');
 
             upload.onchange = (e) => {
                 const file = e.target.files[0];
@@ -351,26 +358,23 @@
                     video.onloadedmetadata = () => {
                         canvas.width = video.videoWidth;
                         canvas.height = video.videoHeight;
-                        updateTimeline();
+                        status.innerText = "Video úspěšně načteno. Přetáhni text nebo aplikuj efekty.";
                         drawFrame();
                     };
                 }
             };
 
             playBtn.onclick = () => {
-                if (video.paused) {
-                    video.play();
-                    renderLoop();
-                } else {
-                    video.pause();
-                    cancelAnimationFrame(animationFrameId);
-                }
+                if (video.paused) { video.play(); renderLoop(); playBtn.innerText = "Pauza ⏸"; } 
+                else { video.pause(); cancelAnimationFrame(animationFrameId); playBtn.innerText = "Přehrát ▶"; }
             };
 
             function renderLoop() {
                 if (!video.paused && !video.ended) {
                     drawFrame();
-                    updateTimeline();
+                    const current = Math.floor(video.currentTime);
+                    const total = Math.floor(video.duration) || 0;
+                    timeDisplay.innerText = `${current}s / ${total}s`;
                     animationFrameId = requestAnimationFrame(renderLoop);
                 }
             }
@@ -378,71 +382,90 @@
             function drawFrame() {
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                if (filterType.value !== 'normal') {
+                // Multi-efektový systém pixelů
+                let m = document.getElementById('fxMatrix').checked;
+                let v = document.getElementById('fxVintage').checked;
+                let c = document.getElementById('fxCyberpunk').checked;
+                let co = document.getElementById('fxCold').checked;
+
+                if (m || v || c || co) {
                     let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                     let data = imageData.data;
 
                     for (let i = 0; i < data.length; i += 4) {
-                        let r = data[i], g = data[i+1], b = data[i+2];
-
-                        if (filterType.value === 'matrix') {
-                            data[i] = r * 0.2; data[i+1] = g * 1.5; data[i+2] = b * 0.2;
-                        } else if (filterType.value === 'vintage') {
-                            data[i] = (r * 0.393) + (g * 0.769) + (b * 0.189);
-                            data[i+1] = (r * 0.349) + (g * 0.686) + (b * 0.168);
-                            data[i+2] = (r * 0.272) + (g * 0.534) + (b * 0.131);
-                        } else if (filterType.value === 'cyberpunk') {
-                            data[i] = r * 1.2; data[i+1] = g * 0.3; data[i+2] = b * 1.5;
-                        } else if (filterType.value === 'cold') {
-                            data[i] = r * 0.6; data[i+1] = g * 0.9; data[i+2] = b * 1.4;
+                        if (m) { data[i]*=0.2; data[i+1]*=1.4; data[i+2]*=0.2; }
+                        if (v) {
+                            let r = data[i], g = data[i+1], b = data[i+2];
+                            data[i] = (r*.393)+(g*.769)+(b*.189); data[i+1] = (r*.349)+(g*.686)+(b*.168); data[i+2] = (r*.272)+(g*.534)+(b*.131);
                         }
+                        if (c) { data[i]*=1.2; data[i+1]*=0.3; data[i+2]*=1.4; }
+                        if (co) { data[i]*=0.5; data[i+1]*=0.9; data[i+2]*=1.3; }
                     }
                     ctx.putImageData(imageData, 0, 0);
                 }
 
-                if (customText.value.trim() !== "") {
-                    ctx.fillStyle = textColor.value;
-                    ctx.font = `bold ${canvas.height * 0.06}px Arial`;
-                    ctx.textAlign = "center";
-                    ctx.fillText(customText.value, canvas.width / 2, canvas.height - (canvas.height * 0.1));
+                // Vykreslení textu
+                let textVal = document.getElementById('customText').value;
+                if (textVal.trim() !== "") {
+                    ctx.fillStyle = document.getElementById('textColor').value;
+                    ctx.font = `bold ${canvas.height * 0.05}px Arial`;
+                    ctx.fillText(textVal, textX, textY);
                 }
             }
 
-            function updateTimeline() {
-                const current = Math.floor(video.currentTime);
-                const total = Math.floor(video.duration) || 0;
-                timeDisplay.innerText = `${current}s / ${total}s`;
-            }
+            // Realtime update při změně ovládacích prvků na stopu
+            document.getElementById('customText').oninput = drawFrame;
+            document.getElementById('textColor').onchange = drawFrame;
+            document.getElementById('fxMatrix').onchange = drawFrame;
+            document.getElementById('fxVintage').onchange = drawFrame;
+            document.getElementById('fxCyberpunk').onchange = drawFrame;
+            document.getElementById('fxCold').onchange = drawFrame;
 
-            filterType.onchange = drawFrame;
-            customText.oninput = drawFrame;
-            textColor.onchange = drawFrame;
+            // DRAG & DROP TEXTU NA CANVASU
+            canvas.onmousedown = (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                const mouseY = (e.clientY - rect.top) * (canvas.height / rect.height);
 
-            renderBtn.onclick = () => {
-                if (!video.src) return alert("Nejprve nahraj video!");
+                // Jednoduchá detekce zásahu blízko textu
+                if (Math.abs(mouseX - textX) < canvas.width * 0.3 && Math.abs(mouseY - textY) < canvas.height * 0.1) {
+                    isDragging = true;
+                }
+            };
 
-                status.innerText = "Exportuji... Nech video běžet.";
+            canvas.onmousemove = (e) => {
+                if (isDragging) {
+                    const rect = canvas.getBoundingClientRect();
+                    textX = (e.clientX - rect.left) * (canvas.width / rect.width);
+                    textY = (e.clientY - rect.top) * (canvas.height / rect.height);
+                    drawFrame();
+                }
+            };
+
+            window.onmouseup = () => { isDragging = false; };
+
+            // EXPORT
+            document.getElementById('renderBtn').onclick = () => {
+                if (!video.src) return alert("Chybí video!");
+                status.innerText = "Exportuji... Nech video běžet na konec.";
                 video.currentTime = 0;
                 video.play();
                 renderLoop();
 
                 const stream = canvas.captureStream(30);
-                const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
                 const chunks = [];
-
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-                mediaRecorder.onstop = () => {
+                recorder.ondataavailable = (e) => chunks.push(e.data);
+                recorder.onstop = () => {
                     const blob = new Blob(chunks, { type: 'video/webm' });
-                    const url = URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'custom-video.webm';
+                    a.href = URL.createObjectURL(blob);
+                    a.download = 'capcut-export.webm';
                     a.click();
-                    status.innerText = "Export dokončen!";
+                    status.innerText = "Projekt úspěšně vyexportován!";
                 };
-
-                mediaRecorder.start();
-                video.onended = () => { mediaRecorder.stop(); video.onended = null; };
+                recorder.start();
+                video.onended = () => recorder.stop();
             };
         }
     </script>
