@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Custom Web Video Editor s přihlášením</title>
+    <title>Custom Web Video Editor</title>
     <style>
         :root {
             --bg: #1a1a1a;
@@ -65,9 +65,9 @@
             min-height: 18px;
         }
 
-        /* --- STYLY PRO EDITOR (Skrytý před přihlášením) --- */
+        /* --- STYLY PRO EDITOR --- */
         #appContainer {
-            display: none; /* Zobrazí se až po úspěšném login */
+            display: none;
             flex-direction: column;
             height: 100vh;
         }
@@ -113,7 +113,7 @@
 
     <div id="authContainer">
         <div class="auth-card">
-            <div class="auth-tabs">
+            <div class="auth-tabs" id="authTabs">
                 <button class="auth-tab active" id="tabLoginBtn" onclick="switchAuthTab('login')">Přihlášení</button>
                 <button class="auth-tab" id="tabRegisterBtn" onclick="switchAuthTab('register')">Registrace</button>
             </div>
@@ -122,13 +122,26 @@
             <div id="authMessage" class="auth-msg"></div>
 
             <div class="control-group" style="margin-bottom: 15px;">
-                <input type="text" id="authId" placeholder="Uživatelské ID">
+                <input type="text" id="authUsername" placeholder="Uživatelské jméno">
             </div>
-            <div class="control-group" style="margin-bottom: 20px;">
-                <input type="password" id="authPin" placeholder="Číselný PIN (např. 1234)" maxlength="6">
+            
+            <div class="control-group" id="passwordGroup" style="margin-bottom: 15px;">
+                <input type="password" id="authPassword" placeholder="Heslo">
             </div>
 
-            <button id="authActionBtn" style="width:100%;" onclick="handleAuthSubmit()">Vstoupit do studia</button>
+            <div class="control-group" id="questionGroup" style="margin-bottom: 20px; display: none;">
+                <label style="font-size: 0.8rem; text-align: left; color: #aaa;">Kontrolní otázka pro reset hesla:</label>
+                <select id="authQuestion">
+                    <option value="mazlicek">Jak se jmenoval tvůj první mazlíček?</option>
+                    <option value="mesto">V jakém městě ses narodil(a)?</option>
+                    <option value="skola">Jaká byla tvoje první škola?</option>
+                </select>
+                <input type="text" id="authAnswer" placeholder="Tvoje odpověď">
+            </div>
+
+            <button id="authActionBtn" style="width:100%; margin-bottom: 10px;" onclick="handleAuthSubmit()">Vstoupit do studia</button>
+            
+            <a href="#" id="forgotLink" style="color: var(--accent); font-size: 0.8rem; text-decoration: none;" onclick="switchAuthTab('forgot')">Zapomněl(a) jsi heslo?</a>
         </div>
     </div>
 
@@ -189,65 +202,120 @@
     </div>
 
     <script>
-        // --- LOGIKA AUTENTIZACE (LOCALSTORAGE) ---
+        // --- LOGIKA AUTENTIZACE ---
         let currentAuthMode = 'login';
 
         function switchAuthTab(mode) {
             currentAuthMode = mode;
             document.getElementById('authMessage').innerText = '';
-            document.getElementById('authId').value = '';
-            document.getElementById('authPin').value = '';
+            document.getElementById('authUsername').value = '';
+            document.getElementById('authPassword').value = '';
+            document.getElementById('authAnswer').value = '';
             
+            const tabs = document.getElementById('authTabs');
+            const passwordGroup = document.getElementById('passwordGroup');
+            const questionGroup = document.getElementById('questionGroup');
+            const forgotLink = document.getElementById('forgotLink');
+
+            tabs.style.display = 'flex';
+            passwordGroup.style.display = 'block';
+            questionGroup.style.display = 'none';
+            forgotLink.style.display = 'inline-block';
+
             if (mode === 'login') {
                 document.getElementById('tabLoginBtn').classList.add('active');
                 document.getElementById('tabRegisterBtn').classList.remove('active');
                 document.getElementById('authTitle').innerText = 'Vítej zpět';
                 document.getElementById('authActionBtn').innerText = 'Vstoupit do studia';
-            } else {
+            } else if (mode === 'register') {
                 document.getElementById('tabLoginBtn').classList.remove('active');
                 document.getElementById('tabRegisterBtn').classList.add('active');
                 document.getElementById('authTitle').innerText = 'Vytvořit nový účet';
+                questionGroup.style.display = 'block';
                 document.getElementById('authActionBtn').innerText = 'Zaregistrovat se';
+            } else if (mode === 'forgot') {
+                tabs.style.display = 'none';
+                passwordGroup.style.display = 'none';
+                questionGroup.style.display = 'block';
+                forgotLink.style.display = 'none';
+                document.getElementById('authTitle').innerText = 'Resetovat heslo';
+                document.getElementById('authActionBtn').innerText = 'Obnovit heslo';
+                document.getElementById('authMessage').style.color = '#fff';
+                document.getElementById('authMessage').innerText = 'Zadej své jméno a odpověz na otázku.';
             }
         }
 
         function handleAuthSubmit() {
-            const id = document.getElementById('authId').value.trim();
-            const pin = document.getElementById('authPin').value.trim();
+            const username = document.getElementById('authUsername').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const question = document.getElementById('authQuestion').value;
+            const answer = document.getElementById('authAnswer').value.trim().toLowerCase();
             const msgBox = document.getElementById('authMessage');
 
-            if (!id || !pin) {
+            if (!username) {
                 msgBox.style.color = 'var(--accent)';
-                msgBox.innerText = 'Vyplň ID i PIN!';
+                msgBox.innerText = 'Vyplň uživatelské jméno!';
                 return;
             }
 
-            // Načtení databáze uživatelů z localStorage
             let users = JSON.parse(localStorage.getItem('studio_users')) || {};
 
             if (currentAuthMode === 'register') {
-                // REGISTRACE
-                if (users[id]) {
+                if (!password || !answer) {
                     msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Toto ID je již zabrané. Vyber si jiné!';
+                    msgBox.innerText = 'Vyplň heslo i odpověď na otázku!';
+                    return;
+                }
+                if (users[username]) {
+                    msgBox.style.color = 'var(--accent)';
+                    msgBox.innerText = 'Toto uživatelské jméno je již zabrané!';
                 } else {
-                    users[id] = pin; // Uložení PINu k ID
+                    users[username] = { password: password, question: question, answer: answer };
                     localStorage.setItem('studio_users', JSON.stringify(users));
                     msgBox.style.color = 'var(--success)';
-                    msgBox.innerText = 'Registrace úspěšná! Teď se přihlas.';
-                    setTimeout(() => switchAuthTab('login'), 1000);
+                    msgBox.innerText = 'Registrace úspěšná! Nyní se přihlas.';
+                    setTimeout(() => switchAuthTab('login'), 1200);
                 }
-            } else {
-                // PŘIHLÁŠENÍ
-                if (users[id] && users[id] === pin) {
-                    // Úspěšný login
+
+            } else if (currentAuthMode === 'login') {
+                if (!password) {
+                    msgBox.style.color = 'var(--accent)';
+                    msgBox.innerText = 'Zadej heslo!';
+                    return;
+                }
+                const user = users[username];
+                const savedPassword = user && typeof user === 'object' ? user.password : null;
+
+                if (user && savedPassword === password) {
                     document.getElementById('authContainer').style.display = 'none';
                     document.getElementById('appContainer').style.display = 'flex';
-                    document.getElementById('welcomeUser').innerText = `Uživatel: ${id}`;
-                    initEditor(); // Spuštění funkcí editoru
+                    document.getElementById('welcomeUser').innerText = `Uživatel: ${username}`;
+                    initEditor();
                 } else {
                     msgBox.style.color = 'var(--accent)';
-                    msgBox.innerText = 'Nesprávné ID nebo PIN!';
+                    msgBox.innerText = 'Nesprávné jméno nebo heslo!';
+                }
+
+            } else if (currentAuthMode === 'forgot') {
+                const user = users[username];
+                if (!user || typeof user !== 'object') {
+                    msgBox.style.color = 'var(--accent)';
+                    msgBox.innerText = 'Uživatel s tímto jménem neexistuje.';
+                    return;
+                }
+
+                if (user.question === question && user.answer === answer) {
+                    msgBox.style.color = 'var(--success)';
+                    msgBox.innerText = `Správně! Tvoje heslo je: ${user.password}`;
+                    
+                    document.getElementById('authActionBtn').innerText = 'Zpět na přihlášení';
+                    document.getElementById('authActionBtn').onclick = () => {
+                        document.getElementById('authActionBtn').onclick = handleAuthSubmit;
+                        switchAuthTab('login');
+                    };
+                } else {
+                    msgBox.style.color = 'var(--accent)';
+                    msgBox.innerText = 'Chybná odpověď nebo vybraná otázka!';
                 }
             }
         }
@@ -256,11 +324,8 @@
             document.getElementById('appContainer').style.display = 'none';
             document.getElementById('authContainer').style.display = 'flex';
             switchAuthTab('login');
-            // Zastavíme video při odhlášení
-            const video = document.getElementById('videoSource');
-            video.pause();
+            document.getElementById('videoSource').pause();
         }
-
 
         // --- LOGIKA VIDEO EDITORU ---
         function initEditor() {
@@ -279,7 +344,6 @@
 
             let animationFrameId;
 
-            // Reset eventů (aby se při opakovaném přihlášení neduplikovaly)
             upload.onchange = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -350,7 +414,6 @@
                 timeDisplay.innerText = `${current}s / ${total}s`;
             }
 
-            // Real-time překreslení při změně filtrů/textu, když video stojí
             filterType.onchange = drawFrame;
             customText.oninput = drawFrame;
             textColor.onchange = drawFrame;
